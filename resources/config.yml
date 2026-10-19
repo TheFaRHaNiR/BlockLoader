@@ -1,0 +1,28 @@
+# BlockLoader configuration
+# Everything here is applied once, while the server starts. Nothing runs when chunks load.
+
+# Re-applies the block state upgrades the server skips for maps saved with a newer
+# block version number (fixes "Property minecraft:corner is missing" on stairs,
+# "minecraft:connection_east is missing" on fences, minecraft:chain -> iron_chain...).
+upgrade-fix: true
+
+# Teaches the server the vanilla blocks it doesn't implement, so players see the real block
+# instead of "update!". Remove an ID from this list to leave that block unhandled.
+blocks:
+  - minecraft:moss_block
+  - minecraft:moss_carpet
+  - minecraft:conduit
+  - minecraft:kelp
+  - minecraft:seagrass
+  - minecraft:piston
+  - minecraft:sticky_piston
+  - minecraft:piston_arm_collision
+  - minecraft:sticky_piston_arm_collision
+  - minecraft:dropper
+  - minecraft:dispenser
+
+# Loads any other unknown block ID as a block the server already knows.
+# Only use a target without states. The map is saved with the target block if a chunk changes.
+# Example:
+#   minecraft:some_new_block: minecraft:stone
+aliases: {}
