@@ -6,18 +6,36 @@ namespace ApexGaming\BlockLoader;
 
 use ApexGaming\BlockLoader\block\ExtraBlocks;
 use ApexGaming\BlockLoader\task\RegisterBlocksTask;
+use ApexGaming\BlockLoader\world\LenientLevelDB;
 use pocketmine\data\bedrock\block\BlockStateData;
 use pocketmine\data\bedrock\block\BlockStateDeserializeException;
 use pocketmine\plugin\PluginBase;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
 use function array_diff;
 use function array_keys;
+use function array_merge;
+use function array_values;
 use function count;
 use function implode;
 use function is_array;
 use function is_string;
 
 final class Main extends PluginBase{
+
+	/** The default "blocks" list of 1.0 / 1.1 configs, to read old configs correctly. */
+	private const BLOCKS_1_0 = [
+		"minecraft:moss_block",
+		"minecraft:moss_carpet",
+		"minecraft:conduit",
+		"minecraft:kelp",
+		"minecraft:seagrass",
+		"minecraft:piston",
+		"minecraft:sticky_piston",
+		"minecraft:piston_arm_collision",
+		"minecraft:sticky_piston_arm_collision",
+		"minecraft:dropper",
+		"minecraft:dispenser",
+	];
 
 	/**
 	 * Everything happens here, before any world is loaded. Worlds loaded later (copied minigame maps included)
@@ -28,6 +46,10 @@ final class Main extends PluginBase{
 		$config = $this->getConfig();
 		$logger = $this->getLogger();
 
+		if((bool) $config->get("biome-fix", true)){
+			LenientLevelDB::install($this->getServer()->getWorldManager()->getProviderManager());
+		}
+
 		if((bool) $config->get("upgrade-fix", true)){
 			$schemas = UpgradeFix::apply();
 			if(count($schemas) > 0){
@@ -35,13 +57,19 @@ final class Main extends PluginBase{
 			}
 		}
 
-		$wanted = $config->get("blocks", ExtraBlocks::IDS);
-		if(is_array($wanted) && count($wanted) > 0){
-			$unsupported = array_diff($wanted, ExtraBlocks::IDS);
-			if(count($unsupported) > 0){
-				$logger->warning("Not a block BlockLoader can add (use aliases instead): " . implode(", ", $unsupported));
-			}
-
+		$disabled = $config->get("disabled-blocks", []);
+		$disabled = is_array($disabled) ? $disabled : [];
+		$legacy = $config->get("blocks");
+		if(is_array($legacy)){
+			//1.0 / 1.1 config: an allow-list. Keep what was removed from it disabled; blocks added since are on.
+			$disabled = array_merge($disabled, array_diff(self::BLOCKS_1_0, $legacy));
+		}
+		$unsupported = array_diff($disabled, ExtraBlocks::IDS);
+		if(count($unsupported) > 0){
+			$logger->warning("Not a block BlockLoader adds: " . implode(", ", $unsupported));
+		}
+		$wanted = array_values(array_diff(ExtraBlocks::IDS, $disabled));
+		if(count($wanted) > 0){
 			$typeIds = ExtraBlocks::allocate($wanted);
 			if(count($typeIds) > 0){
 				ExtraBlocks::registerStates(ExtraBlocks::registerRuntime($typeIds));

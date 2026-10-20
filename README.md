@@ -2,7 +2,7 @@
 
 # 🧱 BlockLoader
 
-**Loads the blocks PocketMine-MP can't read and repairs chests that won't open, so your maps just work: no `update!` blocks, no wall of chunk errors.**
+**Loads the blocks PocketMine-MP can't read, and repairs chests that won't open and chunks that won't load, so your maps just work: no `update!` blocks, no wall of chunk errors.**
 
 ![PocketMine-MP](https://img.shields.io/badge/PocketMine--MP-5.x-5B2C83)
 ![PM-NG](https://img.shields.io/badge/tested%20on-PocketMine--MP--NG-2E7D32)
@@ -12,6 +12,7 @@
 [The problem](#-the-problem) ·
 [What it fixes](#-what-it-fixes) ·
 [Chests that won't open](#-chests-that-wont-open) ·
+[Chunks that won't load](#-chunks-that-wont-load) ·
 [How it works](#%EF%B8%8F-how-it-works) ·
 [Install](#-install) ·
 [Configuration](#%EF%B8%8F-configuration) ·
@@ -59,6 +60,8 @@ block with its rotation and state:
 | `piston`, `sticky_piston` | `facing_direction` |
 | `piston_arm_collision`, `sticky_piston_arm_collision` | `facing_direction` |
 | `dropper`, `dispenser` | `facing_direction`, `triggered_bit` |
+| `composter` | `composter_fill_level` |
+| `frog_spawn` | — |
 
 **Skipped upgrades.** These are re-applied to blocks of every version:
 
@@ -90,6 +93,24 @@ placing does. The block entity comes back before the click is handled, so **the 
 - Runs at `LOWEST` priority, so minigame loot plugins already see the repaired chest.
 - In an edit world, the repair is saved with the map, so clicking each chest once fixes the map for good.
 - Nothing runs on chunk load. A block that already has its block entity is left alone.
+
+## 🗺️ Chunks that won't load
+
+Some world tools save a chunk's biomes as "same as the sub-chunk below" for **every** sub-chunk, including the
+first one, which has nothing below it. PocketMine rejects the whole chunk, and its terrain never loads:
+
+```
+[World: Arcade-Lobby] Failed to load chunk x=-4 z=2: Serialized biome palette 0 has no previous palette to copy from
+```
+
+In the Arcade lobby map, that was **226 of 306 chunks**.
+
+BlockLoader puts in a LevelDB provider that loads chunks exactly as before. Only when a chunk fails with
+**that exact error**, the first marker is replaced with a single plains biome (the rest still copy it), the
+repaired data is saved into that chunk, and the chunk is loaded again.
+
+- Healthy chunks: no change, no extra work.
+- Broken chunks: repaired once; from the next load on they are ordinary chunks.
 
 ## ⚙️ How it works
 
@@ -125,7 +146,7 @@ but haven't been tested.
 2. Restart. You'll see something like:
    ```
    [BlockLoader] Re-applying 3 block upgrade schema(s) for maps saved with a newer block version
-   [BlockLoader] Loaded 11 block(s): minecraft:moss_block, minecraft:moss_carpet, ...
+   [BlockLoader] Loaded 13 block(s): minecraft:moss_block, minecraft:moss_carpet, ...
    ```
 3. Load your map. The errors are gone.
 
@@ -139,7 +160,8 @@ but haven't been tested.
 | --- | --- | --- |
 | `tile-fix` | `true` | Repair chests (and other containers) missing their block entity when they're clicked |
 | `upgrade-fix` | `true` | Re-apply the upgrade schemas the server skips (stairs `corner`, fences `connection_*`, …) |
-| `blocks` | all 11 | Which unimplemented vanilla blocks to load. Remove an ID to leave it unhandled |
+| `biome-fix` | `true` | Repair and load chunks that fail with `Serialized biome palette 0 has no previous palette to copy from` |
+| `disabled-blocks` | `[]` | Blocks to leave to PocketMine. Every block BlockLoader adds is on unless listed here, including ones added in future versions |
 | `aliases` | `{}` | Load other unknown IDs as an existing block **without states** |
 
 ```yaml
@@ -180,6 +202,9 @@ Each case uses the exact NBT from a real server log, decoded by the fork's own u
 | State IDs main thread vs async worker | — | ✅ identical |
 | SW-Cliffs: 18 chests without block entity, on a real NG server | ❌ won't open | ✅ block entity on first click (0.46 ms for all 18), still there after save + reload |
 | Double chest with both block entities missing | ❌ won't open | ✅ both repaired and paired, 54 slots |
+| Real Arcade lobby map: 226 chunks with broken biomes | ❌ 226 CRITICAL, 80 of 306 chunks load | ✅ 0 errors, 306 of 306 load, repair saved (second start: nothing to repair) |
+| `composter` (fill level 3), `frog_spawn` | ❌ Unknown block ID | ✅ states kept, real block on every protocol |
+| Upgrading with a 1.0 / 1.1 `config.yml` | — | ✅ new blocks load too |
 
 ## 📝 Limitations
 
@@ -188,3 +213,6 @@ Each case uses the exact NBT from a real server log, decoded by the fork's own u
 - Fixed blocks are written back in the current format only if the server re-saves the chunk. The plugin never
   rewrites map files on its own.
 - `aliases` only accepts targets without states (`minecraft:stone`, not `minecraft:oak_stairs`).
+- Install BlockLoader **before** a map is loaded for the first time. Without it, PocketMine replaces unknown
+  blocks with `update!`, and if that chunk gets saved, the original block is gone from the map file.
+- Repaired biomes are plains. The broken data held no biome at all, so there was nothing to restore.

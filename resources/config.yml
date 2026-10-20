@@ -6,25 +6,21 @@
 # "minecraft:connection_east is missing" on fences, minecraft:chain -> iron_chain...).
 upgrade-fix: true
 
+# Chunks that fail with "Serialized biome palette 0 has no previous palette to copy from" (written by some world
+# tools) are repaired with a plains biome and loaded, instead of missing their terrain. The repair is saved in
+# that chunk, so it happens once. Healthy chunks load exactly as before.
+biome-fix: true
+
 # Chests, furnaces, barrels, hoppers... that do nothing when clicked because the map never saved their block
 # entity. When a player clicks one, it gets its block entity back and opens on that same click, like breaking
 # and placing it again. Double chests are paired. Nothing runs on chunk load.
 tile-fix: true
 
-# Teaches the server the vanilla blocks it doesn't implement, so players see the real block
-# instead of "update!". Remove an ID from this list to leave that block unhandled.
-blocks:
-  - minecraft:moss_block
-  - minecraft:moss_carpet
-  - minecraft:conduit
-  - minecraft:kelp
-  - minecraft:seagrass
-  - minecraft:piston
-  - minecraft:sticky_piston
-  - minecraft:piston_arm_collision
-  - minecraft:sticky_piston_arm_collision
-  - minecraft:dropper
-  - minecraft:dispenser
+# BlockLoader teaches the server the vanilla blocks it doesn't implement, so players see the real block instead
+# of "update!": moss_block, moss_carpet, conduit, kelp, seagrass, piston, sticky_piston, piston_arm_collision,
+# sticky_piston_arm_collision, dropper, dispenser, composter, frog_spawn. Blocks added in future versions are on too.
+# List an ID here to leave that block to PocketMine (it then logs an error and shows "update!").
+disabled-blocks: []
 
 # Loads any other unknown block ID as a block the server already knows.
 # Only use a target without states. The map is saved with the target block if a chunk changes.

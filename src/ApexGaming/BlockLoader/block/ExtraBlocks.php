@@ -39,6 +39,8 @@ final class ExtraBlocks{
 		"minecraft:sticky_piston_arm_collision",
 		"minecraft:dropper",
 		"minecraft:dispenser",
+		"minecraft:composter",
+		"minecraft:frog_spawn",
 	];
 
 	private function __construct(){
@@ -102,6 +104,9 @@ final class ExtraBlocks{
 					new BoolProperty("triggered_bit", fn(Dropper $b) => $b->isTriggered(), fn(Dropper $b, bool $v) => $b->setTriggered($v)),
 				],
 				$block instanceof Piston, $block instanceof PistonArm => [$facing],
+				$block instanceof Composter => [
+					new IntProperty("composter_fill_level", 0, Composter::MAX_FILL_LEVEL, fn(Composter $b) => $b->getFillLevel(), fn(Composter $b, int $v) => $b->setFillLevel($v)),
+				],
 				$block instanceof Kelp => [
 					new IntProperty("kelp_age", 0, Kelp::MAX_AGE, fn(Kelp $b) => $b->getAge(), fn(Kelp $b, int $v) => $b->setAge($v)),
 				],
@@ -138,6 +143,8 @@ final class ExtraBlocks{
 			"minecraft:sticky_piston_arm_collision" => new PistonArm($identifier, "Sticky Piston Head", new BlockTypeInfo(BlockBreakInfo::pickaxe(1.5))),
 			"minecraft:dropper" => new Dropper($identifier, "Dropper", new BlockTypeInfo(BlockBreakInfo::pickaxe(3.5, ToolTier::WOOD))),
 			"minecraft:dispenser" => new Dropper($identifier, "Dispenser", new BlockTypeInfo(BlockBreakInfo::pickaxe(3.5, ToolTier::WOOD))),
+			"minecraft:composter" => new Composter($identifier, "Composter", new BlockTypeInfo(BlockBreakInfo::axe(0.6))),
+			"minecraft:frog_spawn" => new FrogSpawn($identifier, "Frog Spawn", new BlockTypeInfo(BlockBreakInfo::instant())),
 			default => throw new \InvalidArgumentException("Unknown block ID $id"),
 		};
 	}
