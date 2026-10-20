@@ -2,7 +2,7 @@
 
 # 🧱 BlockLoader
 
-**Loads the blocks PocketMine-MP can't read, so your maps load clean: no `update!` blocks, no wall of chunk errors.**
+**Loads the blocks PocketMine-MP can't read and repairs chests that won't open, so your maps just work: no `update!` blocks, no wall of chunk errors.**
 
 ![PocketMine-MP](https://img.shields.io/badge/PocketMine--MP-5.x-5B2C83)
 ![PM-NG](https://img.shields.io/badge/tested%20on-PocketMine--MP--NG-2E7D32)
@@ -11,6 +11,7 @@
 
 [The problem](#-the-problem) ·
 [What it fixes](#-what-it-fixes) ·
+[Chests that won't open](#-chests-that-wont-open) ·
 [How it works](#%EF%B8%8F-how-it-works) ·
 [Install](#-install) ·
 [Configuration](#%EF%B8%8F-configuration) ·
@@ -71,6 +72,25 @@ are picked up automatically.
 
 **Anything else.** `aliases` loads any other unknown ID as a block of your choice.
 
+## 🧰 Chests that won't open
+
+Some maps have chests that do nothing when clicked, and the only fix used to be breaking and placing them again.
+The cause is a chest **block** saved without its **block entity** (the part that holds the inventory). WorldEdit
+pastes and world converters often do this. Vanilla quietly recreates it; PocketMine doesn't, and logs nothing.
+
+It's common. In a scan of 59 SkyWars and Survival Games maps, **208 of 3,370 chests** had no block entity.
+SW-Cliffs alone had 18 of 45.
+
+When a player clicks such a block, BlockLoader writes it again in place, which is exactly what breaking and
+placing does. The block entity comes back before the click is handled, so **the chest opens on that same click**.
+
+- Works for every block that needs a block entity: chests, trapped chests, barrels, furnaces, hoppers…
+- The other half of a double chest is repaired too, and the halves are paired like vanilla placement
+  (54-slot inventory).
+- Runs at `LOWEST` priority, so minigame loot plugins already see the repaired chest.
+- In an edit world, the repair is saved with the map, so clicking each chest once fixes the map for good.
+- Nothing runs on chunk load. A block that already has its block entity is left alone.
+
 ## ⚙️ How it works
 
 ```mermaid
@@ -117,6 +137,7 @@ but haven't been tested.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
+| `tile-fix` | `true` | Repair chests (and other containers) missing their block entity when they're clicked |
 | `upgrade-fix` | `true` | Re-apply the upgrade schemas the server skips (stairs `corner`, fences `connection_*`, …) |
 | `blocks` | all 11 | Which unimplemented vanilla blocks to load. Remove an ID to leave it unhandled |
 | `aliases` | `{}` | Load other unknown IDs as an existing block **without states** |
@@ -157,6 +178,8 @@ Each case uses the exact NBT from a real server log, decoded by the fork's own u
 | Already-correct 1.26 stairs | ✅ | ✅ unchanged |
 | Client network ID, all 32 protocols the fork accepts (589 → 2193) | — | ✅ real block, never `update!` |
 | State IDs main thread vs async worker | — | ✅ identical |
+| SW-Cliffs: 18 chests without block entity, on a real NG server | ❌ won't open | ✅ block entity on first click (0.46 ms for all 18), still there after save + reload |
+| Double chest with both block entities missing | ❌ won't open | ✅ both repaired and paired, 54 slots |
 
 ## 📝 Limitations
 

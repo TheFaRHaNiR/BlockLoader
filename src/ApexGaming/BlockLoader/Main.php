@@ -60,6 +60,12 @@ final class Main extends PluginBase{
 		}
 	}
 
+	protected function onEnable() : void{
+		if((bool) $this->getConfig()->get("tile-fix", true)){
+			TileFix::register($this);
+		}
+	}
+
 	/**
 	 * @param mixed[] $aliases
 	 */

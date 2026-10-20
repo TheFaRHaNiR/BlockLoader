@@ -6,6 +6,11 @@
 # "minecraft:connection_east is missing" on fences, minecraft:chain -> iron_chain...).
 upgrade-fix: true
 
+# Chests, furnaces, barrels, hoppers... that do nothing when clicked because the map never saved their block
+# entity. When a player clicks one, it gets its block entity back and opens on that same click, like breaking
+# and placing it again. Double chests are paired. Nothing runs on chunk load.
+tile-fix: true
+
 # Teaches the server the vanilla blocks it doesn't implement, so players see the real block
 # instead of "update!". Remove an ID from this list to leave that block unhandled.
 blocks:

@@ -1,7 +1,7 @@
 name: BlockLoader
 main: ApexGaming\BlockLoader\Main
-version: 1.0.0
+version: 1.1.0
 api: 5.0.0
 author: TheFaRHaNiR
-description: Loads blocks PocketMine-MP can't read (moss, kelp, pistons, new stair/fence states...) so maps load clean, with zero per-chunk cost.
+description: Loads blocks PocketMine-MP can't read (moss, kelp, pistons, new stair/fence states...) and repairs chests that won't open, with zero per-chunk cost.
 load: STARTUP
