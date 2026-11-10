@@ -143,8 +143,9 @@ flowchart LR
 - Everything is registered in `onLoad`, before any world loads. Worlds that don't exist yet are covered too,
   such as minigame maps copied and loaded mid-game, because chunk decoding uses the same global tables.
 - **Nothing listens to chunk loads.** No events, no chunk scanning, no tasks.
-- Block type IDs are picked on the main thread and handed to every async worker, so lighting and generation
-  there see identical state IDs.
+- Block type IDs are picked on the main thread and handed to every async worker, which registers the blocks
+  and their states too. Lighting, generation and **chunk encoding for players** run there, so every worker
+  sends exactly what the main thread would.
 - Upgrade schemas are only re-added when running them twice changes nothing: renamed IDs, added and removed
   properties. Schemas with value remaps are left alone.
 
@@ -212,6 +213,7 @@ Each case uses the exact NBT from a real server log, decoded by the fork's own u
 | Already-correct 1.26 stairs | ✅ | ✅ unchanged |
 | Client network ID, all 32 protocols the fork accepts (589 → 2193) | — | ✅ real block, never `update!` |
 | State IDs main thread vs async worker | — | ✅ identical |
+| Block IDs sent in chunks by every async worker, 1.21.50 and current clients, real NG server | ❌ 1.3.0: placeholder on every worker | ✅ 1.3.1: same blocks as the main thread on all 6 workers |
 | SW-Cliffs: 18 chests without block entity, on a real NG server | ❌ won't open | ✅ block entity on first click (0.46 ms for all 18), still there after save + reload |
 | Double chest with both block entities missing | ❌ won't open | ✅ both repaired and paired, 54 slots |
 | Real Arcade lobby map: 226 chunks with broken biomes | ❌ 226 CRITICAL, 80 of 306 chunks load | ✅ 0 errors, 306 of 306 load, repair saved (second start: nothing to repair) |

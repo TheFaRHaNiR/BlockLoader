@@ -149,7 +149,8 @@ final class ExtraBlocks{
 	}
 
 	/**
-	 * Teaches the serializer and deserializer the blocks' saved states. Main thread only.
+	 * Teaches the serializer and deserializer the blocks' saved states. Needed on the main thread and on every async
+	 * worker, since chunks are encoded for players there.
 	 *
 	 * @param Block[] $blocks
 	 * @phpstan-param array<string, Block> $blocks

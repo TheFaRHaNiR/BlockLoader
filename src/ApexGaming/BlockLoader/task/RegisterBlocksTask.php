@@ -10,7 +10,9 @@ use function igbinary_serialize;
 use function igbinary_unserialize;
 
 /**
- * Registers the blocks on an async worker so lighting and generation there know their light values.
+ * Registers the blocks on an async worker. Lighting and generation there need their light values, and chunks
+ * are encoded for players there (ChunkRequestTask), which needs their states: without them every one of these
+ * blocks is sent as the "unknown" placeholder.
  * The type IDs come from the main thread so state IDs are identical on both sides.
  */
 final class RegisterBlocksTask extends AsyncTask{
@@ -28,6 +30,6 @@ final class RegisterBlocksTask extends AsyncTask{
 	public function onRun() : void{
 		/** @phpstan-var array<string, int> $typeIds */
 		$typeIds = igbinary_unserialize($this->typeIds);
-		ExtraBlocks::registerRuntime($typeIds);
+		ExtraBlocks::registerStates(ExtraBlocks::registerRuntime($typeIds));
 	}
 }
