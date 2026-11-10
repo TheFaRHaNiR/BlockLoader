@@ -4,11 +4,20 @@ declare(strict_types=1);
 
 namespace ApexGaming\BlockLoader\block;
 
+use ApexGaming\BlockLoader\block\generic\GenericFlowable;
+use ApexGaming\BlockLoader\block\generic\GenericOpaque;
+use ApexGaming\BlockLoader\block\generic\GenericTransparent;
+use ApexGaming\BlockLoader\block\generic\RawState;
+use ApexGaming\BlockLoader\tile\Beehive as BeehiveTile;
+use ApexGaming\BlockLoader\tile\DecoratedPot as DecoratedPotTile;
+use ApexGaming\BlockLoader\tile\PistonArm as PistonArmTile;
 use pocketmine\block\Block;
 use pocketmine\block\BlockBreakInfo;
 use pocketmine\block\BlockIdentifier;
 use pocketmine\block\BlockTypeIds;
+use pocketmine\block\BlockToolType;
 use pocketmine\block\BlockTypeInfo;
+use pocketmine\block\BlockTypeTags;
 use pocketmine\block\Opaque;
 use pocketmine\block\RuntimeBlockStateRegistry;
 use pocketmine\data\bedrock\block\convert\Model;
@@ -19,6 +28,7 @@ use pocketmine\data\bedrock\block\convert\property\IntProperty;
 use pocketmine\data\bedrock\block\convert\property\ValueFromStringProperty;
 use pocketmine\item\ToolTier;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
+use function count;
 use function in_array;
 
 /**
@@ -41,7 +51,58 @@ final class ExtraBlocks{
 		"minecraft:dispenser",
 		"minecraft:composter",
 		"minecraft:frog_spawn",
+		"minecraft:decorated_pot",
+		"minecraft:cherry_sapling",
+		"minecraft:mangrove_propagule",
+		"minecraft:end_portal",
+		"minecraft:beehive",
+		"minecraft:bee_nest",
+		"minecraft:honey_block",
+		"minecraft:scaffolding",
+		"minecraft:turtle_egg",
+		"minecraft:grindstone",
+		"minecraft:target",
 	];
+
+	private const OPAQUE = "opaque";
+	private const TRANSPARENT = "transparent";
+	private const NO_COLLISION = "no_collision";
+
+	/**
+	 * Decorative blocks whose states are kept exactly as saved. States and their values are the client's own
+	 * (canonical block palette of Bedrock 1.26.50), in the order the client lists them.
+	 *
+	 * id => [shape, name, hardness, tool, light, tile class, type tags, [state => [type, values]]]
+	 */
+	private static function genericDefinitions() : array{
+		$direction = ["direction" => [RawState::INT, [0, 1, 2, 3]]];
+		$hive = $direction + ["honey_level" => [RawState::INT, [0, 1, 2, 3, 4, 5]]];
+		$pottable = [BlockTypeTags::POTTABLE_PLANTS];
+		return [
+			"minecraft:decorated_pot" => [self::TRANSPARENT, "Decorated Pot", 0.0, BlockToolType::NONE, 0, DecoratedPotTile::class, [], $direction],
+			"minecraft:cherry_sapling" => [self::NO_COLLISION, "Cherry Sapling", 0.0, BlockToolType::NONE, 0, null, $pottable, ["age_bit" => [RawState::BOOL, [0, 1]]]],
+			"minecraft:mangrove_propagule" => [self::NO_COLLISION, "Mangrove Propagule", 0.0, BlockToolType::NONE, 0, null, $pottable, [
+				"hanging" => [RawState::BOOL, [0, 1]],
+				"propagule_stage" => [RawState::INT, [0, 1, 2, 3, 4]],
+			]],
+			"minecraft:end_portal" => [self::NO_COLLISION, "End Portal", -1.0, BlockToolType::NONE, 15, null, [], []],
+			"minecraft:beehive" => [self::OPAQUE, "Beehive", 0.6, BlockToolType::AXE, 0, BeehiveTile::class, [], $hive],
+			"minecraft:bee_nest" => [self::OPAQUE, "Bee Nest", 0.3, BlockToolType::AXE, 0, BeehiveTile::class, [], $hive],
+			"minecraft:honey_block" => [self::TRANSPARENT, "Honey Block", 0.0, BlockToolType::NONE, 0, null, [], []],
+			"minecraft:scaffolding" => [self::TRANSPARENT, "Scaffolding", 0.0, BlockToolType::NONE, 0, null, [], [
+				"stability" => [RawState::INT, [0, 1, 2, 3, 4, 5, 6, 7]],
+				"stability_check" => [RawState::BOOL, [0, 1]],
+			]],
+			"minecraft:turtle_egg" => [self::TRANSPARENT, "Turtle Egg", 0.5, BlockToolType::NONE, 0, null, [], [
+				"cracked_state" => [RawState::STRING, ["no_cracks", "cracked", "max_cracked"]],
+				"turtle_egg_count" => [RawState::STRING, ["one_egg", "two_egg", "three_egg", "four_egg"]],
+			]],
+			"minecraft:grindstone" => [self::TRANSPARENT, "Grindstone", 2.0, BlockToolType::PICKAXE, 0, null, [], [
+				"attachment" => [RawState::STRING, ["standing", "hanging", "side", "multiple"]],
+			] + $direction],
+			"minecraft:target" => [self::OPAQUE, "Target", 0.5, BlockToolType::HOE, 0, null, [], []],
+		];
+	}
 
 	private function __construct(){
 		//NOOP
@@ -104,6 +165,8 @@ final class ExtraBlocks{
 					new BoolProperty("triggered_bit", fn(Dropper $b) => $b->isTriggered(), fn(Dropper $b, bool $v) => $b->setTriggered($v)),
 				],
 				$block instanceof Piston, $block instanceof PistonArm => [$facing],
+				$block instanceof GenericOpaque, $block instanceof GenericTransparent, $block instanceof GenericFlowable =>
+					count($block->getRawStates()) > 0 ? $block->getRawStates() : null,
 				$block instanceof Composter => [
 					new IntProperty("composter_fill_level", 0, Composter::MAX_FILL_LEVEL, fn(Composter $b) => $b->getFillLevel(), fn(Composter $b, int $v) => $b->setFillLevel($v)),
 				],
@@ -130,15 +193,20 @@ final class ExtraBlocks{
 	}
 
 	private static function create(string $id, int $typeId) : Block{
+		$generic = self::genericDefinitions()[$id] ?? null;
+		if($generic !== null){
+			return self::createGeneric($typeId, ...$generic);
+		}
 		$identifier = new BlockIdentifier($typeId);
+		$piston = new BlockIdentifier($typeId, PistonArmTile::class);
 		return match($id){
 			"minecraft:moss_block" => new Opaque($identifier, "Moss Block", new BlockTypeInfo(BlockBreakInfo::hoe(0.1))),
 			"minecraft:moss_carpet" => new MossCarpet($identifier, "Moss Carpet", new BlockTypeInfo(BlockBreakInfo::hoe(0.1))),
 			"minecraft:conduit" => new Conduit($identifier, "Conduit", new BlockTypeInfo(BlockBreakInfo::pickaxe(3.0))),
 			"minecraft:kelp" => new Kelp($identifier, "Kelp", new BlockTypeInfo(BlockBreakInfo::instant())),
 			"minecraft:seagrass" => new Seagrass($identifier, "Seagrass", new BlockTypeInfo(BlockBreakInfo::instant())),
-			"minecraft:piston" => new Piston($identifier, "Piston", new BlockTypeInfo(BlockBreakInfo::pickaxe(1.5))),
-			"minecraft:sticky_piston" => new Piston($identifier, "Sticky Piston", new BlockTypeInfo(BlockBreakInfo::pickaxe(1.5))),
+			"minecraft:piston" => new Piston($piston, "Piston", new BlockTypeInfo(BlockBreakInfo::pickaxe(1.5))),
+			"minecraft:sticky_piston" => new Piston($piston, "Sticky Piston", new BlockTypeInfo(BlockBreakInfo::pickaxe(1.5))),
 			"minecraft:piston_arm_collision" => new PistonArm($identifier, "Piston Head", new BlockTypeInfo(BlockBreakInfo::pickaxe(1.5))),
 			"minecraft:sticky_piston_arm_collision" => new PistonArm($identifier, "Sticky Piston Head", new BlockTypeInfo(BlockBreakInfo::pickaxe(1.5))),
 			"minecraft:dropper" => new Dropper($identifier, "Dropper", new BlockTypeInfo(BlockBreakInfo::pickaxe(3.5, ToolTier::WOOD))),
@@ -146,6 +214,27 @@ final class ExtraBlocks{
 			"minecraft:composter" => new Composter($identifier, "Composter", new BlockTypeInfo(BlockBreakInfo::axe(0.6))),
 			"minecraft:frog_spawn" => new FrogSpawn($identifier, "Frog Spawn", new BlockTypeInfo(BlockBreakInfo::instant())),
 			default => throw new \InvalidArgumentException("Unknown block ID $id"),
+		};
+	}
+
+	/**
+	 * @param string[] $typeTags
+	 * @param mixed[]  $states state name => [type, values]
+	 * @phpstan-param class-string<\pocketmine\block\tile\Tile>|null $tileClass
+	 * @phpstan-param array<string, array{string, list<int>|list<string>}> $states
+	 */
+	private static function createGeneric(int $typeId, string $shape, string $name, float $hardness, int $tool, int $light, ?string $tileClass, array $typeTags, array $states) : Block{
+		$identifier = new BlockIdentifier($typeId, $tileClass);
+		$breakInfo = $hardness < 0 ? BlockBreakInfo::indestructible() : new BlockBreakInfo($hardness, $tool);
+		$info = new BlockTypeInfo($breakInfo, $typeTags);
+		$rawStates = [];
+		foreach($states as $stateName => [$type, $values]){
+			$rawStates[] = new RawState(count($rawStates), $stateName, $type, $values);
+		}
+		return match($shape){
+			self::OPAQUE => new GenericOpaque($identifier, $name, $info, $rawStates, $light),
+			self::TRANSPARENT => new GenericTransparent($identifier, $name, $info, $rawStates, $light),
+			self::NO_COLLISION => new GenericFlowable($identifier, $name, $info, $rawStates, $light),
 		};
 	}
 }

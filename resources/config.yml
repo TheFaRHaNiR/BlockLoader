@@ -18,7 +18,9 @@ tile-fix: true
 
 # BlockLoader teaches the server the vanilla blocks it doesn't implement, so players see the real block instead
 # of "update!": moss_block, moss_carpet, conduit, kelp, seagrass, piston, sticky_piston, piston_arm_collision,
-# sticky_piston_arm_collision, dropper, dispenser, composter, frog_spawn. Blocks added in future versions are on too.
+# sticky_piston_arm_collision, dropper, dispenser, composter, frog_spawn, decorated_pot, cherry_sapling,
+# mangrove_propagule, end_portal, beehive, bee_nest, honey_block, scaffolding, turtle_egg, grindstone, target.
+# Blocks added in future versions are on too.
 # List an ID here to leave that block to PocketMine (it then logs an error and shows "update!").
 disabled-blocks: []
 

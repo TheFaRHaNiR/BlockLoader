@@ -6,6 +6,7 @@ namespace ApexGaming\BlockLoader;
 
 use ApexGaming\BlockLoader\block\ExtraBlocks;
 use ApexGaming\BlockLoader\task\RegisterBlocksTask;
+use ApexGaming\BlockLoader\tile\RawTile;
 use ApexGaming\BlockLoader\world\LenientLevelDB;
 use pocketmine\data\bedrock\block\BlockStateData;
 use pocketmine\data\bedrock\block\BlockStateDeserializeException;
@@ -70,6 +71,7 @@ final class Main extends PluginBase{
 		}
 		$wanted = array_values(array_diff(ExtraBlocks::IDS, $disabled));
 		if(count($wanted) > 0){
+			RawTile::registerAll();
 			$typeIds = ExtraBlocks::allocate($wanted);
 			if(count($typeIds) > 0){
 				ExtraBlocks::registerStates(ExtraBlocks::registerRuntime($typeIds));
