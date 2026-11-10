@@ -69,10 +69,12 @@ block with its rotation and state:
 | `scaffolding` | `stability`, `stability_check` |
 | `turtle_egg` | `cracked_state`, `turtle_egg_count` |
 | `grindstone` | `attachment`, `direction` |
+| `pointed_dripstone` | `dripstone_thickness`, `hanging` |
+| `lodestone` | — , plus its block entity (compass link) |
 | `end_portal`, `honey_block`, `target` | — |
 
 **Block entities PocketMine would delete.** PocketMine deletes block entities it doesn't know (`Deleted unknown
-tile entity type PistonArm x4`). BlockLoader keeps `PistonArm`, `DecoratedPot` and `Beehive` exactly as saved,
+tile entity type PistonArm x4`). BlockLoader keeps `PistonArm`, `DecoratedPot`, `Beehive` and `Lodestone` exactly as saved,
 writes them back unchanged and sends them to players, so decorated pots keep their patterns.
 
 **Skipped upgrades.** These are re-applied to blocks of every version:
@@ -159,7 +161,7 @@ but haven't been tested.
 2. Restart. You'll see something like:
    ```
    [BlockLoader] Re-applying 3 block upgrade schema(s) for maps saved with a newer block version
-   [BlockLoader] Loaded 24 block(s): minecraft:moss_block, minecraft:moss_carpet, ...
+   [BlockLoader] Loaded 26 block(s): minecraft:moss_block, minecraft:moss_carpet, ...
    ```
 3. Load your map. The errors are gone.
 
@@ -219,7 +221,7 @@ Each case uses the exact NBT from a real server log, decoded by the fork's own u
 | Real Arcade lobby map: 226 chunks with broken biomes | ❌ 226 CRITICAL, 80 of 306 chunks load | ✅ 0 errors, 306 of 306 load, repair saved (second start: nothing to repair) |
 | `composter` (fill level 3), `frog_spawn` | ❌ Unknown block ID | ✅ states kept, real block on every protocol |
 | Upgrading with a 1.0 / 1.1 `config.yml` | — | ✅ new blocks load too |
-| Every state of the 11 blocks added in 1.3 (111 states, from the client's palette) | ❌ Unknown block ID | ✅ 111/111 saved back identically, real block on all 32 protocols |
+| Every state of the 13 blocks added in 1.3 (122 states, from the client's palette) | ❌ Unknown block ID | ✅ 122/122 saved back identically, real block on all 32 protocols |
 | Flower pot holding a cherry sapling | ❌ CRITICAL `Error deserializing plant for flower pot` | ✅ loads with its plant |
 | Decorated pot, sticky piston, beehive with block entity data, on a real NG server | ❌ `Deleted unknown tile entity type` | ✅ data unchanged after save + reload, pot patterns sent to the client |
 

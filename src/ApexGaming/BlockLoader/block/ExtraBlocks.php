@@ -10,6 +10,7 @@ use ApexGaming\BlockLoader\block\generic\GenericTransparent;
 use ApexGaming\BlockLoader\block\generic\RawState;
 use ApexGaming\BlockLoader\tile\Beehive as BeehiveTile;
 use ApexGaming\BlockLoader\tile\DecoratedPot as DecoratedPotTile;
+use ApexGaming\BlockLoader\tile\Lodestone as LodestoneTile;
 use ApexGaming\BlockLoader\tile\PistonArm as PistonArmTile;
 use pocketmine\block\Block;
 use pocketmine\block\BlockBreakInfo;
@@ -62,6 +63,8 @@ final class ExtraBlocks{
 		"minecraft:turtle_egg",
 		"minecraft:grindstone",
 		"minecraft:target",
+		"minecraft:pointed_dripstone",
+		"minecraft:lodestone",
 	];
 
 	private const OPAQUE = "opaque";
@@ -101,6 +104,11 @@ final class ExtraBlocks{
 				"attachment" => [RawState::STRING, ["standing", "hanging", "side", "multiple"]],
 			] + $direction],
 			"minecraft:target" => [self::OPAQUE, "Target", 0.5, BlockToolType::HOE, 0, null, [], []],
+			"minecraft:pointed_dripstone" => [self::TRANSPARENT, "Pointed Dripstone", 1.5, BlockToolType::PICKAXE, 0, null, [], [
+				"dripstone_thickness" => [RawState::STRING, ["tip", "frustum", "middle", "base", "merge"]],
+				"hanging" => [RawState::BOOL, [0, 1]],
+			]],
+			"minecraft:lodestone" => [self::OPAQUE, "Lodestone", 3.5, BlockToolType::PICKAXE, 0, LodestoneTile::class, [], []],
 		];
 	}
 

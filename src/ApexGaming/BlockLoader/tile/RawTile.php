@@ -32,7 +32,7 @@ abstract class RawTile extends Spawnable{
 	 */
 	public static function registerAll() : void{
 		$factory = TileFactory::getInstance();
-		foreach([PistonArm::class, DecoratedPot::class, Beehive::class] as $class){
+		foreach([PistonArm::class, DecoratedPot::class, Beehive::class, Lodestone::class] as $class){
 			if(!$factory->isRegistered($class)){
 				$factory->register($class);
 			}
