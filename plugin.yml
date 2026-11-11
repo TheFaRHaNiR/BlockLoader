@@ -1,6 +1,6 @@
 name: BlockLoader
 main: ApexGaming\BlockLoader\Main
-version: 1.3.2
+version: 1.3.3
 api: 5.0.0
 author: TheFaRHaNiR
 description: Loads blocks PocketMine-MP can't read, repairs chests that won't open and chunks that won't load, with zero per-chunk cost.

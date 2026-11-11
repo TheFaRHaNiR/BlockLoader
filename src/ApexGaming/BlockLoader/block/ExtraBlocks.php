@@ -65,6 +65,7 @@ final class ExtraBlocks{
 		"minecraft:target",
 		"minecraft:pointed_dripstone",
 		"minecraft:lodestone",
+		"minecraft:dripstone_block",
 	];
 
 	private const OPAQUE = "opaque";
@@ -108,6 +109,7 @@ final class ExtraBlocks{
 				"dripstone_thickness" => [RawState::STRING, ["tip", "frustum", "middle", "base", "merge"]],
 				"hanging" => [RawState::BOOL, [0, 1]],
 			]],
+			"minecraft:dripstone_block" => [self::OPAQUE, "Dripstone Block", 1.5, BlockToolType::PICKAXE, 0, null, [], []],
 			"minecraft:lodestone" => [self::OPAQUE, "Lodestone", 3.5, BlockToolType::PICKAXE, 0, LodestoneTile::class, [], []],
 		];
 	}
